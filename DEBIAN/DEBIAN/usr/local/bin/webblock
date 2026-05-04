@@ -1,0 +1,61 @@
+#!/bin/bash
+# webblock - controlla blocco siti in base a giorno/orario
+
+CONFIG_DIR="/etc/webblock"
+SITES_FILE="$CONFIG_DIR/sites.conf"
+SCHEDULE_FILE="$CONFIG_DIR/schedule.conf"
+HOSTS="/etc/hosts"
+MARKER_START="# webblock-start"
+MARKER_END="# webblock-end"
+
+if [ ! -f "$SCHEDULE_FILE" ] || [ ! -f "$SITES_FILE" ]; then
+    echo "webblock: file di configurazione mancanti, uscita."
+    exit 1
+fi
+
+source "$SCHEDULE_FILE"
+
+DOW=$(date +%u)
+ORA_ATTUALE=$(date +%H:%M)
+
+time_to_min() {
+    local h=$(echo "$1" | cut -d: -f1 | sed 's/^0//')
+    local m=$(echo "$1" | cut -d: -f2 | sed 's/^0//')
+    echo $(( h * 60 + m ))
+}
+
+MIN_ATTUALE=$(time_to_min "$ORA_ATTUALE")
+MIN_INIZIO=$(time_to_min "$BLOCCO_INIZIO")
+MIN_FINE=$(time_to_min "$BLOCCO_FINE")
+
+BLOCCA=false
+
+if [ "$DOW" -ge 1 ] && [ "$DOW" -le 5 ]; then
+    if [ "$MIN_ATTUALE" -ge "$MIN_INIZIO" ] && [ "$MIN_ATTUALE" -lt "$MIN_FINE" ]; then
+        BLOCCA=true
+    fi
+elif [ "$DOW" -ge 6 ]; then
+    if [ "$WEEKEND_LIBERO" = "true" ]; then
+        BLOCCA=false
+    else
+        if [ "$MIN_ATTUALE" -ge "$MIN_INIZIO" ] && [ "$MIN_ATTUALE" -lt "$MIN_FINE" ]; then
+            BLOCCA=true
+        fi
+    fi
+fi
+
+sed -i "/$MARKER_START/,/$MARKER_END/d" "$HOSTS"
+
+if [ "$BLOCCA" = "true" ]; then
+    {
+        echo "$MARKER_START"
+        while IFS= read -r sito; do
+            [ -z "$sito" ] && continue
+            echo "127.0.0.1  $sito"
+        done < "$SITES_FILE"
+        echo "$MARKER_END"
+    } >> "$HOSTS"
+    logger "webblock: siti BLOCCATI (${ORA_ATTUALE}, giorno ${DOW})"
+else
+    logger "webblock: siti SBLOCCATI (${ORA_ATTUALE}, giorno ${DOW})"
+fi
