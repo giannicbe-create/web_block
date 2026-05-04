@@ -1,0 +1,7 @@
+[Unit]
+Description=WebBlock - aggiorna blocco siti web
+After=network.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/webblock
