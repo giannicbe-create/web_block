@@ -1,0 +1,10 @@
+Package: webblock
+Version: 1.0
+Section: utils
+Priority: optional
+Architecture: all
+Depends: systemd
+Maintainer: giannicbe-create <noreply@github.com>
+Description: Parental control basato su /etc/hosts
+ Blocca siti web durante la settimana e li sblocca nel weekend.
+ Configurazione letta da /dev/shm/lista.txt durante l'installazione.
