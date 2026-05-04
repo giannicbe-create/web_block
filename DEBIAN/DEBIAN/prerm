@@ -1,0 +1,12 @@
+#!/bin/bash
+set -e
+
+if [ -f /etc/hosts ]; then
+    sed -i '/# webblock-start/,/# webblock-end/d' /etc/hosts
+fi
+
+systemctl stop webblock.timer 2>/dev/null || true
+systemctl disable webblock.timer 2>/dev/null || true
+systemctl daemon-reload
+
+echo "webblock disattivato e siti sbloccati."
