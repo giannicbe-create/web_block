@@ -32,7 +32,7 @@ if [ ! -f "$SOURCE" ]; then
     echo "ERRORE: /dev/shm/lista.txt non trovato!"
     exit 1
 fi
-grep -v '^-\s*#' "$SOURCE" | grep -v '^-\s*$' | grep -v '=' > "$SITES_FILE" || true
+grep -v '^\s*#' "$SOURCE" | grep -v '^\s*$' | grep -v '=' > "$SITES_FILE" || true
 BLOCCO_INIZIO=$(grep '^BLOCCO_INIZIO=' "$SOURCE" | cut -d= -f2 | tr -d '[:space:]')
 BLOCCO_FINE=$(grep '^BLOCCO_FINE=' "$SOURCE" | cut -d= -f2 | tr -d '[:space:]')
 WEEKEND_LIBERO=$(grep '^WEEKEND_LIBERO=' "$SOURCE" | cut -d= -f2 | tr -d '[:space:]')
@@ -79,8 +79,8 @@ ORA_ATTUALE=$(date +%H:%M)
 time_to_min() {
     local h=$(echo "$1" | cut -d: -f1 | sed 's/^0*//')
     local m=$(echo "$1" | cut -d: -f2 | sed 's/^0*//')
-    h=
-{h:-0}; m=${m:-0}
+    h=${h:-0}
+    m=${m:-0}
     echo $(( h * 60 + m ))
 }
 MIN_ATTUALE=$(time_to_min "$ORA_ATTUALE")
@@ -131,8 +131,11 @@ chmod 755 /tmp/webblock-build/webblock-1.0/usr/local/bin/webblock
 cd /tmp/webblock-build
 dpkg-deb --build webblock-1.0
 
-cp /tmp/webblock-build/webblock-1.0.deb ~/Desktop/webblock-1.0.deb
+cp /tmp/webblock-build/webblock-1.0.deb ~/Scrivania/webblock-1.0.deb 2>/dev/null || \
+cp /tmp/webblock-build/webblock-1.0.deb ~/Desktop/webblock-1.0.deb 2>/dev/null || \
+cp /tmp/webblock-build/webblock-1.0.deb ~/webblock-1.0.deb
+
 echo ""
 echo "=== FATTO! ==="
-echo "Il file webblock-1.0.deb e stato copiato sul Desktop!"
+echo "Il file webblock-1.0.deb e stato copiato sul Desktop (o nella home)!"
 echo "Prima di installarlo, crea /dev/shm/lista.txt con i siti da bloccare."
