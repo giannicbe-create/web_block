@@ -1,0 +1,43 @@
+#!/bin/bash
+set -e
+
+CONFIG_DIR="/etc/webblock"
+SITES_FILE="$CONFIG_DIR/sites.conf"
+SCHEDULE_FILE="$CONFIG_DIR/schedule.conf"
+SOURCE="/dev/shm/lista.txt"
+
+mkdir -p "$CONFIG_DIR"
+
+if [ ! -f "$SOURCE" ]; then
+    echo "ERRORE: /dev/shm/lista.txt non trovato!"
+    echo "Crea il file prima di installare il pacchetto."
+    exit 1
+fi
+
+grep -v '^\s*#' "$SOURCE" | grep -v '^\s*$' | grep -v '=' > "$SITES_FILE" || true
+
+BLOCCO_INIZIO=$(grep '^BLOCCO_INIZIO=' "$SOURCE" | cut -d= -f2 | tr -d '[:space:]')
+BLOCCO_FINE=$(grep '^BLOCCO_FINE=' "$SOURCE" | cut -d= -f2 | tr -d '[:space:]')
+WEEKEND_LIBERO=$(grep '^WEEKEND_LIBERO=' "$SOURCE" | cut -d= -f2 | tr -d '[:space:]')
+
+BLOCCO_INIZIO="${BLOCCO_INIZIO:-07:00}"
+BLOCCO_FINE="${BLOCCO_FINE:-22:00}"
+WEEKEND_LIBERO="${WEEKEND_LIBERO:-true}"
+
+cat > "$SCHEDULE_FILE" <<EOF
+BLOCCO_INIZIO=$BLOCCO_INIZIO
+BLOCCO_FINE=$BLOCCO_FINE
+WEEKEND_LIBERO=$WEEKEND_LIBERO
+EOF
+
+echo "Configurazione salvata in $CONFIG_DIR"
+echo "  Siti: $(wc -l < "$SITES_FILE") domini"
+echo "  Orari blocco: $BLOCCO_INIZIO - $BLOCCO_FINE"
+echo "  Weekend libero: $WEEKEND_LIBERO"
+
+systemctl daemon-reload
+systemctl enable webblock.timer
+systemctl start webblock.timer
+/usr/local/bin/webblock
+
+echo "webblock installato e attivo!"
